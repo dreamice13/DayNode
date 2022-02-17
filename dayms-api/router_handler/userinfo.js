@@ -1,5 +1,7 @@
 // 导入数据库操作模块
 const db = require('../db/index')
+// 导入 bcryptjs
+const bcrypt = require('bcryptjs')
 
 // 获取用户基本信息的处理函数
 exports.getUserInfo = (req, res) => {
@@ -103,10 +105,14 @@ exports.getUsers = (req, res) => {
     const pageSize = parseInt(req.query.pagesize)
     const serachWord = '%' + req.query.query + '%'
     const sql = `select * from sys_user where username like ? `
-    const sql1 = `select * from sys_user where username like ? limit ${(pageNum - 1)  * pageSize}, ${pageSize} `
+    const sql1 = `select id, username, mobile, email, user_pic, role_id, state, create_time from sys_user where username like ? limit ${(pageNum - 1)  * pageSize}, ${pageSize} `
     db.query(sql, serachWord, (err, results) => {
         const total = results.length
-        db.query(sql, serachWord, (err, results1) => {
+        db.query(sql1, serachWord, (err, results1) => {
+            for(idx in results1) {
+                results1[idx].state = results1[idx].state === 0 ? false : true
+                results1[idx].role_name =  results1[idx].role_id === 1 ? '超级管理员' : '普通用户'
+            }
             res.send({
                 data: {
                     total: total,
@@ -114,10 +120,111 @@ exports.getUsers = (req, res) => {
                     users: results1
                 },
                 meta: {
-                    ms: "获取菜单列表成功",
+                    ms: "获取用户列表成功",
                     status: 200
                 }
             })
         })
     })
 }
+
+// 添加用户
+exports.addUser = (req, res) => {
+    // 获取客户端提交到服务器的用户信息
+    const userInfo = req.body
+    
+    // 定义 SQL 语句
+    const sql = `select * from sys_user where username=?`
+    db.query(sql, [userInfo.username], function (err, results) {
+        // 执行 SQL 语句失败
+        if (err) {
+        //   return res.send({ status: 1, message: err.message })
+            return res.cc(err)
+        }
+        // 用户名被占用
+        if (results.length > 0) {
+        //   return res.send({ status: 1, message: '用户名被占用，请更换其他用户名！' })
+        //   return res.cc('用户名被占用，请更换其他用户名！')
+            res.send({
+                meta: {
+                    ms: "用户名被占用，请更换其他用户名",
+                    status: 422
+                }
+            })
+        }
+        // 对用户的密码,进行 bcrype 加密，返回值是加密之后的密码字符串
+        userInfo.password = bcrypt.hashSync(userInfo.password, 10)
+
+        // 定义插入用户的 SQL 语句
+        const sql = 'insert into sys_user set ?'
+        // 调用 db.query() 执行 SQL 语句，插入新用户
+        db.query(sql, 
+            { 
+                username: userInfo.username, 
+                password: userInfo.password,
+
+                email: userInfo.email,
+                mobile: userInfo.mobile,
+                role_id: 2,
+                state: 1,
+                create_time: Math.round(new Date().getTime()/1000).toString()
+             }, function (err, results) {
+            // 执行 SQL 语句失败
+            if (err) return res.cc(err)
+            // SQL 语句执行成功，但影响行数不为 1
+            if (results.affectedRows !== 1) {
+                //   return res.send({ status: 1, message: '注册用户失败，请稍后再试！' })
+                return res.cc('添加用户失败，请稍后再试！')
+            }
+            // 注册成功
+            // res.send({ status: 0, message: '注册成功！' })
+            res.send({
+                meta: {
+                    ms: "添加用户成功",
+                    status: 201
+                }
+            })
+        })
+          
+    })
+}
+
+exports.updateUser = (req, res) => {
+    const sql = `update sys_user set ? where id=?` 
+    req.body.role_id = req.body.role_name === '超级管理员'? 1 : 2
+    delete req.body.role_name
+    db.query(sql, [req.body, req.body.id], (err, results) => {
+        // 执行 SQL 语句失败
+        if (err) return res.cc(err)
+      
+        // 执行 SQL 语句成功，但影响行数不为 1
+        if (results.affectedRows !== 1) return res.cc('修改用户基本信息失败！')
+      
+        // 修改用户信息成功
+        // return res.cc('修改用户基本信息成功！', 0)
+        res.send({
+            meta: {
+                ms: "修改用户基本信息成功",
+                status: 200
+            }
+        })
+    })
+}
+
+exports.deleteUser = (req, res) => {
+    const id = req.params.id
+    const sql = `delete from sys_user where id = ?`
+    db.query(sql, id, (err, results) => {
+        // 执行 SQL 语句成功，但影响行数不为 1
+        if (results.affectedRows === 1) {
+            res.send({
+                data: null,
+                meta: {
+                    ms: "删除成功",
+                    status: 200
+                }
+            })
+        }
+    })
+    
+} 

@@ -20,6 +20,12 @@ router.post('/updatepwd', expressJoi(update_password_schema), userinfo_handler.u
 router.post('/update/avatar', expressJoi(update_avatar_schema), userinfo_handler.updateAvatar)
 // 获取用户列表
 router.get('/users', userinfo_handler.getUsers)
+// 添加用户
+router.post('/users', userinfo_handler.addUser)
+// 修改用户
+router.put('/users/:id', userinfo_handler.updateUser)
+// 删除用户
+router.delete('/users/:id', userinfo_handler.deleteUser)
 
 // 向外共享路由对象
 module.exports = router
