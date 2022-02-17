@@ -113,17 +113,12 @@ exports.getUsers = (req, res) => {
                 results1[idx].state = results1[idx].state === 0 ? false : true
                 results1[idx].role_name =  results1[idx].role_id === 1 ? '超级管理员' : '普通用户'
             }
-            res.send({
-                data: {
-                    total: total,
-                    pagenum: pageNum,
-                    users: results1
-                },
-                meta: {
-                    ms: "获取用户列表成功",
-                    status: 200
-                }
-            })
+            const data = {
+                total: total,
+                pagenum: pageNum,
+                users: results1
+            }
+            res.aa("获取用户列表成功", 200, data)
         })
     })
 }
@@ -174,16 +169,11 @@ exports.addUser = (req, res) => {
             // SQL 语句执行成功，但影响行数不为 1
             if (results.affectedRows !== 1) {
                 //   return res.send({ status: 1, message: '注册用户失败，请稍后再试！' })
-                return res.cc('添加用户失败，请稍后再试！')
+                return res.aa('添加用户失败，请稍后再试！', 500)
             }
             // 注册成功
             // res.send({ status: 0, message: '注册成功！' })
-            res.send({
-                meta: {
-                    ms: "添加用户成功",
-                    status: 201
-                }
-            })
+            res.aa("添加用户成功", 201)
         })
           
     })
@@ -198,16 +188,10 @@ exports.updateUser = (req, res) => {
         if (err) return res.cc(err)
       
         // 执行 SQL 语句成功，但影响行数不为 1
-        if (results.affectedRows !== 1) return res.cc('修改用户基本信息失败！')
+        if (results.affectedRows !== 1) return res.aa('修改用户失败！', 500)
       
         // 修改用户信息成功
-        // return res.cc('修改用户基本信息成功！', 0)
-        res.send({
-            meta: {
-                ms: "修改用户基本信息成功",
-                status: 200
-            }
-        })
+        return res.aa('修改用户成功！', 200)
     })
 }
 
@@ -217,13 +201,7 @@ exports.deleteUser = (req, res) => {
     db.query(sql, id, (err, results) => {
         // 执行 SQL 语句成功，但影响行数不为 1
         if (results.affectedRows === 1) {
-            res.send({
-                data: null,
-                meta: {
-                    ms: "删除成功",
-                    status: 200
-                }
-            })
+            res.aa("删除成功", 200)
         }
     })
     

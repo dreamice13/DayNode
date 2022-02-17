@@ -28,6 +28,16 @@ app.use(function (req, res, next) {
       message: err instanceof Error ? err.message : err,
     })
   }
+  res.aa = (msg, status, data = null) => {
+    res.send({
+      meta: {
+        msg,
+        status,
+        time: Date.now()
+      },
+      data: data
+    })
+  }
   next()
 })
 
