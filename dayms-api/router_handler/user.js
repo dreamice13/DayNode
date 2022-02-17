@@ -60,7 +60,7 @@ exports.login = (req, res) => {
     // 接收表单数据
     const userinfo = req.body
     // 定义 SQL 语句
-    const sql = `select * from ev_users where username=?`
+    const sql = `select * from sys_user where username=?`
     // 执行 SQL 语句，查询用户的数据
     db.query(sql, userinfo.username, function (err, results) {
         // 执行 SQL 语句失败
@@ -83,12 +83,19 @@ exports.login = (req, res) => {
         })
         // 将生成的 Token 字符串响应给客户端
         res.send({
-            status: 0,
-            message: '登录成功！',
-            // 为了方便客户端使用 Token，在服务器端直接拼接上 Bearer 的前缀
-            token: 'Bearer ' + tokenStr,
+            meta: {
+                msg: "登录成功",
+                status: 200
+            },
+            data: {
+                id: user.id,
+                username: user.username,
+                mobile: user.mobile,
+                email: user.email,
+                // 为了方便客户端使用 Token，在服务器端直接拼接上 Bearer 的前缀
+                token: 'Bearer ' + tokenStr,
+            }
         })
-        
     })
     // res.send('login OK')
 }
