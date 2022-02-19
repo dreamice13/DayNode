@@ -58,6 +58,10 @@ const userinfoRouter = require('./router/userinfo')
 app.use('/api', userinfoRouter)
 const menuRouter = require('./router/menu')
 app.use('/api', menuRouter)
+const websiteRouter = require('./router/website')
+app.use('/api', websiteRouter)
+const articleRouter = require('./router/article')
+app.use('/api', articleRouter)
 
 // 错误中间件
 app.use(function (err, req, res, next) {
