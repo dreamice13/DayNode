@@ -205,4 +205,15 @@ exports.deleteUser = (req, res) => {
         }
     })
     
-} 
+}
+
+exports.updateUserState = (req, res) => {
+    const id = req.params.id
+    const state = req.params.state
+    const stateNum = state === 'true'? 1 : 0
+    const sql = `update sys_user set state = ? where id = ?`
+    db.query(sql, [stateNum, id], (err, results) => {
+        if(err || results.affectedRows !== 1) return res.aa('用户状态更新报错', 500)
+        return res.aa('用户状态更新成功！', 200)
+    })
+}

@@ -26,6 +26,8 @@ router.post('/users', userinfo_handler.addUser)
 router.put('/users/:id', userinfo_handler.updateUser)
 // 删除用户
 router.delete('/users/:id', userinfo_handler.deleteUser)
+// 修改用户状态
+router.put('/users/:id/state/:state', userinfo_handler.updateUserState)
 
 // 向外共享路由对象
 module.exports = router

@@ -62,6 +62,8 @@ const websiteRouter = require('./router/website')
 app.use('/api', websiteRouter)
 const articleRouter = require('./router/article')
 app.use('/api', articleRouter)
+const englishRouter = require('./router/english')
+app.use('/api', englishRouter)
 
 // 错误中间件
 app.use(function (err, req, res, next) {
