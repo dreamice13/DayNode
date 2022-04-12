@@ -22,11 +22,20 @@ exports.websiteList = (req, res) => {
 exports.addWebsite = (req, res) => {
     const websiteInfo = req.body
     const sql = `insert into website set ?`
+    const sqlSelect = `select count(1) count from website where url = ? or name = ?`
     websiteInfo.create_time = Math.round(new Date().getTime()/1000).toString()
-    db.query(sql, websiteInfo, (err, results) => {
-        if(err || results.affectedRows !== 1) return res.aa('添加website报错', 500)
-        res.aa('添加网站成功', 201)
-    })
+    db.query(sqlSelect, [req.body.url, req.body.name], (err, results) => {
+        if(err){
+            return res.aa('插入查询website报错', 500)
+        } else if(results[0].count == 0){
+            db.query(sql, websiteInfo, (err, results) => {
+                if(err || results.affectedRows !== 1) return res.aa('添加website报错', 500)
+                return res.aa('添加网站成功', 201)
+            })
+        }  else  {
+            return res.aa('该网站已存在，不需要重复添加', 422)
+        }
+    })    
 }
 
 exports.updateWebsite = (req, res) => {
