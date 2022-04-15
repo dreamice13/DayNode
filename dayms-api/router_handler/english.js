@@ -22,11 +22,21 @@ exports.englishList = (req, res) => {
 exports.addEnglish = (req, res) => {
     const englishInfo = req.body
     const sql = `insert into english set ?`
+    const sqlSelect = `select count(1) count from english where name = ?`
     englishInfo.create_time = Math.round(new Date().getTime()/1000).toString()
-    db.query(sql, englishInfo, (err, results) => {
-        if(err || results.affectedRows !== 1) return res.aa('添加english报错', 500)
-        res.aa('添加英文单词成功', 201)
+    db.query(sqlSelect, req.body.name, (err, results) => {
+        if(err){
+            return res.aa('插入查询english报错', 500)
+        } else if(results[0].count == 0){
+            db.query(sql, englishInfo, (err, results) => {
+                if(err || results.affectedRows !== 1) return res.aa('添加english报错', 500)
+                res.aa('添加英文单词成功', 201)
+            })
+        }  else  {
+            return res.aa('该单词已存在，不需要重复添加', 422)
+        }
     })
+    
 }
 
 exports.updateEnglish = (req, res) => {
