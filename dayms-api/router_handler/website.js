@@ -5,7 +5,7 @@ exports.websiteList = (req, res) => {
     const pageSize = parseInt(req.query.pagesize)
     const serachWord = '%' + req.query.query + '%'
     const sql = `select * from website where name like ? `
-    const sql1 = `select id, name, url, type, create_time from website where name like ? limit ${(pageNum - 1)  * pageSize}, ${pageSize} `
+    const sql1 = `select id, name, url, favicon, type, create_time from website where name like ? limit ${(pageNum - 1)  * pageSize}, ${pageSize} `
     db.query(sql, serachWord, (err, results) => {
         const total = results.length
         db.query(sql1, serachWord, (err, results1) => {
