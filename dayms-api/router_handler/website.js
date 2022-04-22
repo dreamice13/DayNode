@@ -4,11 +4,17 @@ exports.websiteList = (req, res) => {
     const pageNum = parseInt(req.query.pagenum)
     const pageSize = parseInt(req.query.pagesize)
     const serachWord = '%' + req.query.query + '%'
-    const sql = `select * from website where name like ? `
-    const sql1 = `select id, name, url, favicon, type, create_time from website where name like ? limit ${(pageNum - 1)  * pageSize}, ${pageSize} `
-    db.query(sql, serachWord, (err, results) => {
+    const sql_total = `select * from website where name like ? `
+    const sql_select = `select w.id, w.name, w.url, w.favicon, sd.name type, w.type type_id, w.create_time 
+    from website w
+    left join sys_dict sd on w.type = sd.id and sd.parent_id = 4 
+    left join log_click lc on w.id = lc.website_id
+    where w.name like ?
+    order by lc.num_click desc
+    limit ${(pageNum - 1)  * pageSize}, ${pageSize} `
+    db.query(sql_total, serachWord, (err, results) => {
         const total = results.length
-        db.query(sql1, serachWord, (err, results1) => {
+        db.query(sql_select, serachWord, (err, results1) => {
             const data = {
                 total: total,
                 pagenum: pageNum,
