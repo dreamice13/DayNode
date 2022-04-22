@@ -60,3 +60,25 @@ exports.deleteWebsite = (req, res) => {
         return res.aa('删除网站成功！', 200)
     })
 }
+
+exports.clickWebsite = (req, res) => {
+    const id = req.params.id;
+    const sql_select = `select num_click from log_click where website_id = ?`
+    const sql_insert = `insert into log_click (user_id, website_id, num_click) values (1000, ?, 1)`
+    const sql_update = `update log_click set num_click = ? where website_id = ?`
+    db.query(sql_select, id, (err, results) => {
+        if(err) return res.aa('网址访问埋点记录查询报错', 500)
+        if(results.length == 0){
+            db.query(sql_insert, id, (err, results) => {
+                if(err || results.affectedRows !== 1) return res.aa('网址访问埋点记录新增报错', 500)
+                return res.aa('网址访问埋点记录成功！', 200)
+            })
+        } else {
+            let num_click = results[0].num_click + 1;
+            db.query(sql_update, [num_click, id], (err, results) => {
+                if(err || results.affectedRows !== 1) return res.aa('网址访问埋点记录更新报错', 500)
+                return res.aa('网址访问埋点记录成功！', 200)
+            })
+        } 
+    })  
+}

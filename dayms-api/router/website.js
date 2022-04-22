@@ -7,5 +7,6 @@ router.get('/websites', websiteHandler.websiteList)
 router.post('/websites', websiteHandler.addWebsite)
 router.put('/websites/:id', websiteHandler.updateWebsite)
 router.delete('/websites/:id', websiteHandler.deleteWebsite)
+router.put('/websitesclick/:id', websiteHandler.clickWebsite)
 
 module.exports = router
