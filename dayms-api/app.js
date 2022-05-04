@@ -68,6 +68,8 @@ const dictionaryRouter = require('./router/dictionary')
 app.use('/api', dictionaryRouter)
 const searchRouter = require('./router/search')
 app.use('/api', searchRouter)
+const tagRouter = require('./router/tag')
+app.use('/api', tagRouter)
 
 // 错误中间件
 app.use(function (err, req, res, next) {

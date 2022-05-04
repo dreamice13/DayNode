@@ -6,12 +6,13 @@ exports.websiteList = (req, res) => {
     const serachWord = '%' + req.query.query + '%'
     const type = req.query.type
     const sql_total = `select * from website where name like ? `
-    const sql_select = `select w.id, w.name, w.url, w.favicon, sd.name type, w.type type_id, w.create_time 
-    from website w
-    left join sys_dict sd on w.type = sd.id and sd.parent_id = 4 
-    left join log_click lc on w.id = lc.website_id
+    const sql_select = `SELECT w.id, w.name, w.url, w.favicon, tags.tags_name, tags.tags_id, w.create_time, w.update_time, w.description 
+    FROM website w
+    LEFT JOIN (SELECT rwt.webid, GROUP_CONCAT(st.name) tags_name, GROUP_CONCAT(st.id) tags_id FROM rel_web_tag rwt 
+            LEFT JOIN sys_tag st ON rwt.tagid = st.id
+            GROUP BY rwt.webid) tags ON w.id = tags.webid
+    LEFT JOIN log_click lc ON w.id = lc.website_id
     where w.name like ?
-    ${type == "0" ? "" : "and w.type =" + type}
     order by lc.num_click desc
     limit ${(pageNum - 1)  * pageSize}, ${pageSize} `
     db.query(sql_total, serachWord, (err, results) => {
@@ -27,17 +28,32 @@ exports.websiteList = (req, res) => {
     })
 } 
 
-exports.addWebsite = (req, res) => {
-    const websiteInfo = req.body
+exports.addWebsite = (req, res) => {debugger
+    const websiteInfo = req.body;
+    const tags = websiteInfo.tags.split(",");
+    const time = Math.round(new Date().getTime()/1000).toString();
+    delete websiteInfo.tags;
     const sql = `insert into website set ?`
     const sqlSelect = `select count(1) count from website where url = ? or name = ?`
-    websiteInfo.create_time = Math.round(new Date().getTime()/1000).toString()
+    const sqlInsertRel = `insert into rel_web_tag set ?`
+    websiteInfo.create_time = time
     db.query(sqlSelect, [req.body.url, req.body.name], (err, results) => {
         if(err){
             return res.aa('插入查询website报错', 500)
         } else if(results[0].count == 0){
             db.query(sql, websiteInfo, (err, results) => {
                 if(err || results.affectedRows !== 1) return res.aa('添加website报错', 500)
+                let webId = results.insertId;
+                for(tag of tags){
+                    let rel = {};
+                    rel.webid = webId;
+                    rel.tagid = parseInt(tag);
+                    rel.create_time = time;
+                    rel.update_time = time;
+                    db.query(sqlInsertRel, rel, (err, results) => {
+                        if(err || results.affectedRows !== 1) return res.aa('添加website标签报错', 500)
+                    })
+                }
                 return res.aa('添加网站成功', 201)
             })
         }  else  {
@@ -47,10 +63,41 @@ exports.addWebsite = (req, res) => {
 }
 
 exports.updateWebsite = (req, res) => {
+    // 获取参数
+    const id = req.body.id;
+    const name = req.body.name;
+    const url = req.body.url;
+    const tags = req.body.tags;
+    const description = req.body.description;
+    // 获取系统时间
+    const update_time =  Math.round(new Date().getTime()/1000).toString();
+    // 构造插入网站对象
+    const webObj = {name, url, update_time, description}
+    // sql:更新网站
     const sql = `update website set ? where id = ?`
-    db.query(sql, [req.body, req.body.id], (err, results) => {
+    // sql:删除标签
+    const sqlDelTag = `delete from rel_web_tag where webid = ?`
+    // sql:插入标签
+    const sqlInsertRel = `insert into rel_web_tag set ?`
+    db.query(sql, [webObj, id], async (err, results) => {
         if(err || results.affectedRows !== 1) return res.aa('修改website报错', 500)
-        return res.aa('修改网站成功！', 200)
+            db.query(sqlDelTag, id, async (err, results) => {
+                if(err) return res.aa('删除website标签报错', 500)
+                // 如果网站需要添加标签
+                if(tags.length > 0){
+                    for(let tag of tags){
+                        let relWebTag = {};
+                        relWebTag.webid = id;
+                        relWebTag.tagid = tag;
+                        db.query(sqlInsertRel, relWebTag, (err, results) => {
+                            if(err || results.affectedRows !== 1) return res.aa('添加website标签报错', 500)
+                        })
+                    }
+                    return res.aa('修改网站成功！', 200)
+                } else {
+                    return res.aa('修改网站成功！', 200)
+                }
+            })
     })
 }
 
