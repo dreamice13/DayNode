@@ -6,7 +6,8 @@ exports.websiteList = (req, res) => {
     const serachWord = '%' + req.query.query + '%'
     const type = req.query.type
     const sql_total = `select * from website where name like ? `
-    const sql_select = `SELECT w.id, w.name, w.url, w.favicon, tags.tags_name, tags.tags_id, w.create_time, w.update_time, w.description 
+    const sql_select = `SELECT w.id, w.name, w.url, w.favicon, tags.tags_name, tags.tags_id, w.create_time,
+        w.update_time, w.description, lc.num_click
     FROM website w
     LEFT JOIN (SELECT rwt.webid, GROUP_CONCAT(st.name) tags_name, GROUP_CONCAT(st.id) tags_id FROM rel_web_tag rwt 
             LEFT JOIN sys_tag st ON rwt.tagid = st.id
@@ -76,12 +77,43 @@ exports.updateWebsite = (req, res) => {
     // sql:更新网站
     const sql = `update website set ? where id = ?`
     // sql:删除标签
-    const sqlDelTag = `delete from rel_web_tag where webid = ?`
+    const sqlDelTag = `delete from rel_web_tag where id = ?`
     // sql:插入标签
     const sqlInsertRel = `insert into rel_web_tag set ?`
+    // sql:更新标签
+    const sqlUpdateRel = `update rel_web_tag set ? where id = ?`
+    // sql:查询某个网站的标签
+    const sqlSelectRel = `select * from rel_web_tag where webid = ?`
     db.query(sql, [webObj, id], async (err, results) => {
         if(err || results.affectedRows !== 1) return res.aa('修改website报错', 500)
-            db.query(sqlDelTag, id, async (err, results) => {
+            db.query(sqlSelectRel, id, async (err, results) => {
+                let oldTagArr = []
+                for(const oldTag of results){
+                    // 如果旧标签不在新标签内，删除；在则不变
+                    if(!tags.includes(oldTag.tagid)){
+                        db.query(sqlDelTag, oldTag.id, async (err, results) => {
+                            if(err) return res.aa('删除website标签报错', 500)
+                        })
+                    }
+                    oldTagArr.push(oldTag.tagid)
+                }
+                // 如果新标签不在旧标签内，添加；在则不变
+                for(const newTag of tags){
+                    if(!oldTagArr.includes(newTag)){
+                        let relWebTag = {};
+                        relWebTag.webid = id;
+                        relWebTag.tagid = newTag;
+                        relWebTag.create_time = update_time;
+                        relWebTag.update_time = update_time;
+                        db.query(sqlInsertRel, relWebTag, (err, results) => {
+                            if(err || results.affectedRows !== 1) return res.aa('添加website标签报错', 500)
+                        })
+                    }
+                }
+                return res.aa('修改网站成功！', 200)
+            })
+
+            /* db.query(sqlDelTag, id, async (err, results) => {
                 if(err) return res.aa('删除website标签报错', 500)
                 // 如果网站需要添加标签
                 if(tags.length > 0){
@@ -97,7 +129,7 @@ exports.updateWebsite = (req, res) => {
                 } else {
                     return res.aa('修改网站成功！', 200)
                 }
-            })
+            }) */
     })
 }
 
