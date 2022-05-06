@@ -4,7 +4,19 @@ exports.websiteList = (req, res) => {
     const pageNum = parseInt(req.query.pagenum)
     const pageSize = parseInt(req.query.pagesize)
     const serachWord = '%' + req.query.query + '%'
-    const type = req.query.type
+    // 获取标签并生成对应sql
+    const tags = req.query.tags
+    let tagSql = "";
+    if(tags.length > 0){
+        let count = tags.length;
+        let tagStr = "";
+        for(tag of tags){
+            tagStr = tagStr + tag + ","
+        }
+        tagStr = tagStr.substring(0, tagStr.length - 1)
+        tagSql = `AND w.id IN (SELECT webid FROM rel_web_tag WHERE tagid IN (${tagStr}) GROUP BY webid HAVING COUNT(webid) = ${count})`
+    }
+    // sql
     const sql_total = `select * from website where name like ? `
     const sql_select = `SELECT w.id, w.name, w.url, w.favicon, tags.tags_name, tags.tags_id, w.create_time,
         w.update_time, w.description, lc.num_click
@@ -14,6 +26,7 @@ exports.websiteList = (req, res) => {
             GROUP BY rwt.webid) tags ON w.id = tags.webid
     LEFT JOIN log_click lc ON w.id = lc.website_id
     where w.name like ?
+    ${tagSql}
     order by lc.num_click desc
     limit ${(pageNum - 1)  * pageSize}, ${pageSize} `
     db.query(sql_total, serachWord, (err, results) => {
