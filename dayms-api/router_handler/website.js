@@ -7,7 +7,7 @@ exports.websiteList = (req, res) => {
     // 获取标签并生成对应sql
     const tags = req.query.tags
     let tagSql = "";
-    if(tags.length > 0){
+    if(tags && tags.length > 0){
         let count = tags.length;
         let tagStr = "";
         for(tag of tags){
