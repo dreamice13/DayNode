@@ -16,8 +16,13 @@ exports.websiteList = (req, res) => {
         tagStr = tagStr.substring(0, tagStr.length - 1)
         tagSql = `AND w.id IN (SELECT webid FROM rel_web_tag WHERE tagid IN (${tagStr}) GROUP BY webid HAVING COUNT(webid) = ${count})`
     }
-    // sql
-    const sql_total = `select * from website where name like ? `
+    // sql:获取总数
+    const sql_total = `select w.id from website w
+            LEFT JOIN (SELECT rwt.webid, GROUP_CONCAT(st.name) tags_name, GROUP_CONCAT(st.id) tags_id FROM rel_web_tag rwt 
+            LEFT JOIN sys_tag st ON rwt.tagid = st.id
+            GROUP BY rwt.webid) tags ON w.id = tags.webid
+            where name like ?  ${tagSql}`
+    // sql:查询数据
     const sql_select = `SELECT w.id, w.name, w.url, w.favicon, tags.tags_name, tags.tags_id, w.create_time,
         w.update_time, w.description, lc.num_click
     FROM website w
